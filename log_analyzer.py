@@ -20,7 +20,7 @@ class LogNavigator:
     
     def read_chunk(self, position, size):
         with open(self.log_file, 'r') as f:
-            f.seek(position)
+            f.seek(max(0, position))  # Ensure we don't seek to negative position
             return f.read(size)
     
     def navigate_forward(self, lines=10):
@@ -46,7 +46,9 @@ class LogNavigator:
             current_position += len(chunk)
         
         self.cursor = current_position
-        return self.read_chunk(self.cursor - self.buffer_size, self.buffer_size)
+        # Read from the max of 0 or (cursor - buffer_size) to avoid negative positions
+        read_start = max(0, self.cursor - self.buffer_size)
+        return self.read_chunk(read_start, self.buffer_size)
     
     def navigate_backward(self, lines=10):
         if self.cursor <= 0:
@@ -70,6 +72,11 @@ def main():
     parser.add_argument('--lines', type=int, default=10,
                         help='Number of lines to display at once')
     args = parser.parse_args()
+    
+    # Verify that the log file exists
+    if not os.path.exists(args.log_file):
+        print(f"Error: Log file '{args.log_file}' does not exist.")
+        return
     
     navigator = LogNavigator(args.log_file)
     
