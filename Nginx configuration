@@ -1,0 +1,34 @@
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log;
+pid /run/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include             /etc/nginx/mime.types;
+    default_type        application/octet-stream;
+
+    # Define error log format
+    log_format error_only '$time_local [$status] $remote_addr '
+                         '"$request" "$http_referer" '
+                         '"$http_user_agent" "$http_x_forwarded_for" '
+                         '$request_time $upstream_response_time $pipe';
+
+    # Map for 5xx errors
+    map $status $is_server_error {
+        ~^5 1;
+        default 0;
+    }
+
+    # Basic settings
+    sendfile            on;
+    tcp_nopush          on;
+    tcp_nodelay         on;
+    keepalive_timeout   65;
+    types_hash_max_size 4096;
+
+    include /etc/nginx/conf.d/*.conf;
+}
